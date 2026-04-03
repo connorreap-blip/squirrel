@@ -45,6 +45,8 @@ The `on*` callbacks are wired by Agent A in Phase 2 (AppDelegate). In Phase 1, t
 - Phase 2: `agent-b/integration`
 - Phase 3: `agent-b/polish`
 
+**Wait for the VP's phase gate signal** (`.context/phase-gate-N-complete.md`) before branching for the next phase.
+
 ## Build Verification
 
 No unit tests required for UI components, but `swift build` must pass:
