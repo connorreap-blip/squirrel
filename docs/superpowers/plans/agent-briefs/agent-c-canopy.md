@@ -56,6 +56,8 @@ Groups are sorted: Today → Yesterday → other dates descending. Use the times
 - Phase 2: `agent-c/integration`
 - Phase 3: `agent-c/polish`
 
+**Wait for the VP's phase gate signal** (`.context/phase-gate-N-complete.md`) before branching for the next phase.
+
 ## Build Verification
 
 ```bash

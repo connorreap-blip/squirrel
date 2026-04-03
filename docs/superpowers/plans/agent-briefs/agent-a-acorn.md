@@ -50,6 +50,8 @@ public class NotesStore: ObservableObject {
 - Phase 2: `agent-a/integration` (branch from `main` after Phase 1 gate)
 - Phase 3: `agent-a/polish` (branch from `main` after Phase 2 gate)
 
+**Wait for the VP's phase gate signal** (`.context/phase-gate-N-complete.md`) before branching for the next phase.
+
 ## TDD Protocol
 
 You are the primary test-writing agent. Follow strict TDD:

@@ -68,6 +68,8 @@ Idle ──[⌘S]──> WaitingForQ ──[Q within 500ms]──> Trigger (call
 - Phase 2: `agent-d/integration`
 - Phase 3: `agent-d/polish`
 
+**Wait for the VP's phase gate signal** (`.context/phase-gate-N-complete.md`) before branching for the next phase.
+
 ## Build Verification
 
 ```bash

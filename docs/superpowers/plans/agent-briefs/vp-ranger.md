@@ -9,8 +9,9 @@
 1. **Phase 0:** Create project scaffold with all stubs and interfaces. Ensure `swift build` passes before workers branch. You create *all* stub files during Phase 0, but only permanently own the files listed in "Files You Own" below — all other stubs are handed off to their owning agents in Phase 1.
 2. **Phase Gates:** After each phase, review every worker branch, merge into `main` in dependency order, resolve conflicts, run the pre-merge checklist (see below), then `swift build && swift test`.
 3. **Conflict resolution:** Most likely conflict point is `AppState.swift` (multiple agents depend on it). Agent D owns the canonical implementation.
-4. **Smoke testing:** After Phase 2 and Phase 3 gates, run `swift run` and verify the app manually.
+4. **Smoke testing:** After Phase 2 and Phase 3 gates, run `swift run`. UI verification (clicking, typing, popover interaction) requires a human — flag this explicitly and pause for manual testing before proceeding.
 5. **Quality gate:** Reject any branch where `swift build` fails or owned files were modified by the wrong agent (see Ownership Exceptions below).
+6. **Phase gate signaling:** After completing each phase gate merge, write `.context/phase-gate-N-complete.md` (e.g., `.context/phase-gate-1-complete.md`) so worker agents know they can branch from `main` for the next phase. Workers must not branch for Phase N+1 until this file exists.
 
 ## Merge Order
 
@@ -35,6 +36,8 @@ These are authorized cross-ownership modifications. Do **not** reject branches t
 - **Agent A** is authorized to modify `Sources/SquirrelLib/AppDelegate.swift` in **Phase 2** to wire `StatusBarController`, `HotkeyManager`, and `WindowManager` into the app lifecycle.
 
 All other cross-ownership modifications require VP coordination.
+
+> **Note:** Agent D's Phase 3 `checkAccessibility()` addition to `HotkeyManager` is self-contained — it does not require changes to `AppDelegate.swift`. The accessibility check runs inside `HotkeyManager.start()` and falls back to the non-consuming event monitor if permission is denied. No additional ownership exception is needed.
 
 ## Pre-Merge Checklist
 
@@ -73,9 +76,27 @@ After the final Phase 3 gate, verify all of the following before declaring the p
 
 ## Interface Contract Risk: `NotesStore.fileURL`
 
-The Phase 0 stub defines `fileURL` as `public var fileURL: URL` (fully mutable). Agent A's implementation changes this to `public private(set) var fileURL: URL`. Agents D, B, and C branch from the Phase 0 stub and may write code assuming `fileURL` is publicly settable.
+The Phase 0 stub uses `public private(set) var fileURL: URL` to match Agent A's final interface. If any agent attempts to set `fileURL` directly (e.g., `store.fileURL = newURL`), it will fail to compile — they must use `store.updatePath()` instead. Watch for this during pre-merge review.
 
-**Mitigation:** The Phase 0 stub must use `public private(set) var fileURL: URL` to match the final interface. This is reflected in the implementation plan.
+## Interface Contract Note: `HotkeyManager.checkAccessibility()`
+
+Agent D's advertised interface includes `public static func checkAccessibility() -> Bool`, which is added to the real implementation in Phase 3. The Phase 0 stub includes a no-op version (`return true`) so the interface is available from the start if any agent codes against it.
+
+## Rollback Procedure
+
+If a merge breaks `main` during a phase gate:
+
+1. Identify the merge commit that caused the failure: `git log --oneline -5`
+2. Revert the bad merge: `git revert -m 1 <merge-commit-sha>`
+3. Continue merging the remaining agent branches.
+4. File rejection feedback for the reverted agent per the Rejection Protocol.
+5. After the agent fixes their branch, re-merge it in a subsequent pass.
+
+Do **not** use `git reset --hard` to roll back `main` — other agents may have already branched from it.
+
+## Design Spec Reference
+
+The authoritative design spec is at `docs/superpowers/specs/2026-04-02-squirrel-design.md`. During Phase 3 final review, verify the app matches the spec's interaction model, file format, and settings behavior.
 
 ## Build Commands
 
