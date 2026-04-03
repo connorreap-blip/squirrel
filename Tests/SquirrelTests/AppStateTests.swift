@@ -65,6 +65,17 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(updatedURL?.path, "/tmp/updated-notes.txt")
     }
 
+    func testChangingNotesFilePathUpdatesStorePath() {
+        let state = AppState(
+            defaults: defaults,
+            launchAtLoginUpdater: { _ in }
+        )
+
+        state.notesFilePath = "/tmp/store-updated-notes.txt"
+
+        XCTAssertEqual(state.store.fileURL.path, "/tmp/store-updated-notes.txt")
+    }
+
     func testChangingLaunchAtLoginPersistsAndCallsUpdater() {
         var updates: [Bool] = []
         let state = AppState(
