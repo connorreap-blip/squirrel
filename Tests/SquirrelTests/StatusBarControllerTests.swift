@@ -29,6 +29,19 @@ final class StatusBarControllerTests: XCTestCase {
         XCTAssertNil(controller.onOpenSettings)
     }
 
+    func testTogglePopoverRecreatesContentControllerBeforeShowing() throws {
+        let controller = StatusBarController(appState: AppState())
+        let popover = try XCTUnwrap(privateValue(named: "popover", from: controller) as? NSPopover)
+        let initialController = try XCTUnwrap(popover.contentViewController)
+
+        controller.togglePopover()
+
+        let updatedController = try XCTUnwrap(popover.contentViewController)
+
+        XCTAssertFalse(initialController === updatedController)
+        XCTAssertTrue(String(describing: type(of: updatedController)).contains("InputView"))
+    }
+
     private func privateValue(named label: String, from instance: Any) -> Any? {
         Mirror(reflecting: instance).children.first(where: { $0.label == label })?.value
     }

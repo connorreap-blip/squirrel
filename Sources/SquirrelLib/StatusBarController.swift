@@ -23,6 +23,10 @@ public final class StatusBarController: NSObject {
         if popover.isShown {
             popover.performClose(nil)
         } else if let button = statusItem.button {
+            let inputView = InputView(appState: appState, dismiss: { [weak self] in
+                self?.popover.performClose(nil)
+            })
+            popover.contentViewController = NSHostingController(rootView: inputView)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
