@@ -23,40 +23,26 @@ public class HotkeyManager {
 
     public init() {}
 
+    /// Check if accessibility access is granted. Prompts user if not.
+    public static func checkAccessibility() -> Bool {
+        let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
+        return AXIsProcessTrustedWithOptions(options)
+    }
+
     public func start() {
         stop()
 
-        let eventMask = CGEventMask(1 << CGEventType.keyDown.rawValue)
-        let refcon = Unmanaged.passUnretained(self).toOpaque()
-
-        guard let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: eventMask,
-            callback: { _, type, event, refcon in
-                guard let refcon else {
-                    return Unmanaged.passUnretained(event)
-                }
-
-                let manager = Unmanaged<HotkeyManager>.fromOpaque(refcon).takeUnretainedValue()
-                return manager.handleEvent(type: type, event: event)
-            },
-            userInfo: refcon
-        ) else {
-            print("[Squirrel] Failed to create event tap. Grant Accessibility permission in System Settings > Privacy & Security > Accessibility.")
+        if !checkAccessibilityForStart() {
+            log("[Squirrel] Accessibility not granted. Using fallback key monitor (Q key won't be consumed).")
             startFallbackMonitor()
             return
         }
 
-        eventTap = tap
-        runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-
-        if let runLoopSource {
-            CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
+        guard installEventTap() else {
+            log("[Squirrel] Failed to create event tap even with accessibility. Falling back.")
+            startFallbackMonitor()
+            return
         }
-
-        CGEvent.tapEnable(tap: tap, enable: true)
     }
 
     public func stop() {
@@ -79,8 +65,45 @@ public class HotkeyManager {
         globalMonitor = nil
     }
 
-    public static func checkAccessibility() -> Bool {
-        AXIsProcessTrusted()
+    func checkAccessibilityForStart() -> Bool {
+        Self.checkAccessibility()
+    }
+
+    func log(_ message: String) {
+        print(message)
+    }
+
+    func installEventTap() -> Bool {
+        let eventMask = CGEventMask(1 << CGEventType.keyDown.rawValue)
+        let refcon = Unmanaged.passUnretained(self).toOpaque()
+
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: eventMask,
+            callback: { _, type, event, refcon in
+                guard let refcon else {
+                    return Unmanaged.passUnretained(event)
+                }
+
+                let manager = Unmanaged<HotkeyManager>.fromOpaque(refcon).takeUnretainedValue()
+                return manager.handleEvent(type: type, event: event)
+            },
+            userInfo: refcon
+        ) else {
+            return false
+        }
+
+        eventTap = tap
+        runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+
+        if let runLoopSource {
+            CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
+        }
+
+        CGEvent.tapEnable(tap: tap, enable: true)
+        return true
     }
 
     @discardableResult
@@ -166,7 +189,7 @@ public class HotkeyManager {
         timer = nil
     }
 
-    private func startFallbackMonitor() {
+    func startFallbackMonitor() {
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handleNSEvent(event)
         }
