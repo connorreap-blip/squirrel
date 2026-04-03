@@ -9,6 +9,7 @@ struct NotesListDisplayData: Equatable {
     let filteredNotes: [NoteEntry]
     let groupedNotes: [NotesListSection]
     let emptyStateText: String
+    let emptyStateDetailText: String?
     let noteCountText: String
     let filePathText: String
 }
@@ -71,6 +72,11 @@ public struct NotesListView: View {
                 .font(.system(size: 40))
             Text(displayData.emptyStateText)
                 .foregroundColor(.secondary)
+            if let detailText = displayData.emptyStateDetailText {
+                Text(detailText)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -141,12 +147,25 @@ extension NotesListView {
                     && sortDate(for: lhs.value) > sortDate(for: rhs.value))
         }.map { NotesListSection(title: $0.key, notes: $0.value) }
 
-        let emptyStateText = notes.isEmpty ? "No notes yet" : "No matching notes"
+        let fileExists = FileManager.default.fileExists(atPath: fileURL.path)
+        let emptyStateText: String
+        let emptyStateDetailText: String?
+        if !searchText.isEmpty {
+            emptyStateText = "No matching notes"
+            emptyStateDetailText = nil
+        } else if !fileExists {
+            emptyStateText = "No notes file yet"
+            emptyStateDetailText = "Stash your first thought from the menu bar"
+        } else {
+            emptyStateText = "No notes yet"
+            emptyStateDetailText = nil
+        }
 
         return NotesListDisplayData(
             filteredNotes: Array(filteredNotes),
             groupedNotes: groupedNotes,
             emptyStateText: emptyStateText,
+            emptyStateDetailText: emptyStateDetailText,
             noteCountText: "\(notes.count) notes",
             filePathText: fileURL.path
         )

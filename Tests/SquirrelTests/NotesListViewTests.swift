@@ -63,16 +63,42 @@ final class NotesListViewTests: XCTestCase {
     func testMakeDisplayDataUsesNoNotesMessageWhenStoreIsEmpty() {
         let calendar = makeCalendar()
         let referenceDate = makeDate(2026, 4, 2, 12, 0, calendar: calendar)
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("notes.txt")
+
+        try! FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try! Data().write(to: fileURL)
+        defer { try? FileManager.default.removeItem(at: fileURL.deletingLastPathComponent()) }
 
         let displayData = NotesListView.makeDisplayData(
             notes: [],
             searchText: "",
-            fileURL: URL(fileURLWithPath: "/tmp/squirrel-notes.txt"),
+            fileURL: fileURL,
             calendar: calendar,
             referenceDate: referenceDate
         )
 
         XCTAssertEqual(displayData.emptyStateText, "No notes yet")
+    }
+
+    func testMakeDisplayDataUsesNoNotesFileYetMessageWhenFileDoesNotExist() {
+        let calendar = makeCalendar()
+        let referenceDate = makeDate(2026, 4, 2, 12, 0, calendar: calendar)
+
+        let displayData = NotesListView.makeDisplayData(
+            notes: [],
+            searchText: "",
+            fileURL: URL(fileURLWithPath: "/tmp/does-not-exist-notes.txt"),
+            calendar: calendar,
+            referenceDate: referenceDate
+        )
+
+        XCTAssertEqual(displayData.emptyStateText, "No notes file yet")
+        XCTAssertEqual(displayData.emptyStateDetailText, "Stash your first thought from the menu bar")
     }
 
     func testMakeDisplayDataUsesNoMatchingMessageWhenSearchRemovesAllNotes() {
@@ -93,6 +119,21 @@ final class NotesListViewTests: XCTestCase {
         XCTAssertEqual(displayData.emptyStateText, "No matching notes")
         XCTAssertTrue(displayData.filteredNotes.isEmpty)
         XCTAssertTrue(displayData.groupedNotes.isEmpty)
+    }
+
+    func testMakeDisplayDataPrefersSearchMessageWhenFileIsMissing() {
+        let calendar = makeCalendar()
+        let referenceDate = makeDate(2026, 4, 2, 12, 0, calendar: calendar)
+
+        let displayData = NotesListView.makeDisplayData(
+            notes: [],
+            searchText: "milk",
+            fileURL: URL(fileURLWithPath: "/tmp/does-not-exist-notes.txt"),
+            calendar: calendar,
+            referenceDate: referenceDate
+        )
+
+        XCTAssertEqual(displayData.emptyStateText, "No matching notes")
     }
 
     private func makeCalendar() -> Calendar {
