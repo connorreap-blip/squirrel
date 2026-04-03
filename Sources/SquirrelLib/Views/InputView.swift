@@ -22,6 +22,9 @@ public struct InputView: View {
                 .onSubmit {
                     saveAndDismiss()
                 }
+                .onExitCommand {
+                    dismiss()
+                }
 
             if let errorMessage {
                 Text(errorMessage)

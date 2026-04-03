@@ -22,4 +22,11 @@ final class InputViewTests: XCTestCase {
         XCTAssertTrue(description.contains("to stash"))
         XCTAssertTrue(description.contains("esc to dismiss"))
     }
+
+    func testBodyIncludesEscapeDismissCommand() {
+        let view = InputView(appState: AppState(), dismiss: {})
+        let description = String(describing: view.body)
+
+        XCTAssertTrue(description.contains("cancelOperation:"))
+    }
 }
