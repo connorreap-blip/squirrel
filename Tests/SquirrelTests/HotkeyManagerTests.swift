@@ -3,6 +3,27 @@ import CoreGraphics
 @testable import SquirrelLib
 
 final class HotkeyManagerTests: XCTestCase {
+    func testStartUsesFallbackWhenAccessibilityIsDenied() {
+        let manager = HotkeyManagerSpy()
+        manager.accessibilityGranted = false
+
+        manager.start()
+
+        XCTAssertTrue(manager.didStartFallbackMonitor)
+        XCTAssertFalse(manager.didAttemptEventTapInstall)
+    }
+
+    func testStartUsesFallbackWhenEventTapInstallFails() {
+        let manager = HotkeyManagerSpy()
+        manager.accessibilityGranted = true
+        manager.eventTapInstallSucceeds = false
+
+        manager.start()
+
+        XCTAssertTrue(manager.didAttemptEventTapInstall)
+        XCTAssertTrue(manager.didStartFallbackMonitor)
+    }
+
     func testCommandSThenQTriggersAndConsumesQ() {
         let manager = HotkeyManager()
         var triggerCount = 0
@@ -69,5 +90,27 @@ final class HotkeyManagerTests: XCTestCase {
 
         XCTAssertEqual(qResult, .passThrough)
         XCTAssertEqual(triggerCount, 0)
+    }
+}
+
+private final class HotkeyManagerSpy: HotkeyManager {
+    var accessibilityGranted = true
+    var eventTapInstallSucceeds = true
+    private(set) var didAttemptEventTapInstall = false
+    private(set) var didStartFallbackMonitor = false
+
+    override func checkAccessibilityForStart() -> Bool {
+        accessibilityGranted
+    }
+
+    override func installEventTap() -> Bool {
+        didAttemptEventTapInstall = true
+        return eventTapInstallSucceeds
+    }
+
+    override func log(_ message: String) {}
+
+    override func startFallbackMonitor() {
+        didStartFallbackMonitor = true
     }
 }
