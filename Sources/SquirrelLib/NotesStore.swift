@@ -50,6 +50,19 @@ public class NotesStore: ObservableObject {
             .compactMap(NoteEntry.parse)
     }
 
+    /// Load the last N lines for initial display (performance for large files)
+    public func loadRecent(limit: Int = 500) {
+        guard FileManager.default.fileExists(atPath: fileURL.path),
+              let content = try? String(contentsOf: fileURL, encoding: .utf8) else {
+            notes = []
+            return
+        }
+
+        let allLines = content.components(separatedBy: .newlines).filter { !$0.isEmpty }
+        let recentLines = allLines.suffix(limit)
+        notes = recentLines.compactMap(NoteEntry.parse)
+    }
+
     private func ensureDirectoryExists() {
         let directoryURL = fileURL.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)

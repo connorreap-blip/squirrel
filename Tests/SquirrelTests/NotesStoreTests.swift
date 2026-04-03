@@ -67,4 +67,17 @@ final class NotesStoreTests: XCTestCase {
         XCTAssertNoThrow(try nestedStore.append("deep note"))
         XCTAssertTrue(FileManager.default.fileExists(atPath: nestedURL.path))
     }
+
+    func testLoadRecentLimitsResults() throws {
+        for index in 1...10 {
+            try store.append("Note \(index)")
+        }
+
+        store.notes = []
+        store.loadRecent(limit: 3)
+
+        XCTAssertEqual(store.notes.count, 3)
+        XCTAssertEqual(store.notes[0].text, "Note 8")
+        XCTAssertEqual(store.notes[2].text, "Note 10")
+    }
 }
