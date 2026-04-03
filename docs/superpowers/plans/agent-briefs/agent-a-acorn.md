@@ -10,7 +10,7 @@
 | `Sources/SquirrelLib/NotesStore.swift` | 1 | Replace stub |
 | `Tests/SquirrelTests/NoteEntryTests.swift` | 1 | Create |
 | `Tests/SquirrelTests/NotesStoreTests.swift` | 1 | Create |
-| `Sources/SquirrelLib/AppDelegate.swift` | 2 | Replace stub (wiring) |
+| `Sources/SquirrelLib/AppDelegate.swift` | 2 | Replace stub (wiring) — **VP-authorized cross-ownership exception** |
 | `Sources/SquirrelLib/NotesStore.swift` | 3 | Add `loadRecent()` |
 | `Tests/SquirrelTests/NotesStoreTests.swift` | 3 | Add lazy loading test |
 
