@@ -14,6 +14,8 @@ public final class WindowManager {
     }
 
     public func showNotesViewer() {
+        appState.store.loadAll()
+
         if let existing = notesWindow {
             present(existing)
             return
